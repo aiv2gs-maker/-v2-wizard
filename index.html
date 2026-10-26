@@ -774,3 +774,56 @@
         <div class="wizard-step" id="step5">
             <div class="step-block">
                 <div
+
+                </div>
+            </div>
+            <button type="submit" class="nav-btn primary" style="width: 100%; padding: 13px; font-size: 14px; margin-top: 6px;">
+                ✔ 一鍵寫入 Master Dossier 並即時生成報告
+            </button>
+            <div class="wizard-nav" style="margin-top: 10px;">
+                <button type="button" class="nav-btn" onclick="switchTab(4)">⬅ 上一步</button>
+            </div>
+        </div>
+    </form>
+    <div id="successMessage" class="success-msg"></div>
+    <div class="constitutional-notice">
+        V2 Clinical Intake & Assessment Wizard v4.4 — 動態加權嚴重度滑塊與前瞻性飲食處方。
+    </div>
+</div>
+<script>
+function switchTab(stepNum) {
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    const targetStep = document.getElementById('step' + stepNum);
+    const targetTab = document.getElementById('tabBtn' + stepNum);
+    if (targetStep) targetStep.classList.add('active');
+    if (targetTab) targetTab.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function updateSliderVal(num) {
+    const slider = document.getElementById('slider' + num);
+    const badge = document.getElementById('valSlider' + num);
+    if (slider && badge) {
+        const val = slider.value;
+        const labels = ['', '輕度', '中度', '中度關切', '高度急迫', '極度急迫'];
+        badge.textContent = val + ' / 5 分 (' + (labels[val] || '') + ')';
+    }
+}
+function setMode(mode) {
+    const container = document.getElementById('mainContainer');
+    const banner = document.getElementById('week8Banner');
+    document.getElementById('modeDay1').classList.remove('active');
+    document.getElementById('modeWeek8').classList.remove('active');
+    if (mode === 'week8') {
+        document.getElementById('modeWeek8').classList.add('active');
+        if (container) container.classList.add('retest-mode');
+        if (banner) banner.classList.add('show');
+    } else {
+        document.getElementById('modeDay1').classList.add('active');
+        if (container) container.classList.remove('retest-mode');
+        if (banner) banner.classList.remove('show');
+    }
+}
+</script>
+</body>
+</html>
