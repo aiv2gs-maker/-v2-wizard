@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2 Method - Clinical Intake & Assessment Wizard (v4.4 Flagship - Severity Sliders & Dynamic Escort)</title>
+    <style>
+        :root {
+            --bg-color: #f6f5f0;
+            --card-bg: #ffffff;
+            --section-bg: #f8f9fa;
+            --ink-black: #141413;
+            --text-main: #24292f;
+            --text-muted: #57606a;
+            --border-color: #d0d7de;
+            --border-subtle: #eaeef2;
+            --gate-green: #186337;
+            --gate-green-bg: #e6f4ea;
+            --gate-yellow: #9a6700;
+            --accent-blue: #0969da;
+            --mono-font: "SF Mono", "JetBrains Mono", "Roboto Mono", monospace;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang HK", "Microsoft JhengHei", sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 840px;
+            background-color: var(--card-bg);
+            border: 1.5px solid var(--ink-black);
+            border-radius: 8px;
+            padding: 16px 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--ink-black);
+            padding-bottom: 8px;
+        }
+        header h1 {
+            font-size: 16px;
+            color: var(--ink-black);
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        header .sub-brand {
+            font-family: var(--mono-font);
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: right;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .mode-switcher {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: #eae8e1;
+            padding: 5px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .mode-btn {
+            padding: 9px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .mode-btn.active {
+            background: var(--ink-black);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .mode-btn span {
+            display: block;
+            font-size: 9.5px;
+            font-weight: 500;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .week8-banner {
+            display: none;
+            background-color: var(--gate-green-bg);
+            border: 1px solid #9cd1b0;
+            border-left: 4px solid var(--gate-green);
+            color: var(--gate-green);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .week8-banner.show { display: flex; }
+
+        .wizard-tabs {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-bottom: 14px;
+        }
+        .tab-btn {
+            padding: 9px 2px;
+            background-color: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background-color: var(--ink-black);
+            color: #ffffff;
+            border-color: var(--ink-black);
+        }
+
+        .wizard-step { display: none; }
+        .wizard-step.active { display: block; }
+
+        .step-block {
+            margin-bottom: 10px;
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+        }
+        .step-title {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: var(--ink-black);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 4px;
+        }
+        .sub-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+        }
+
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 7px 10px;
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--ink-black);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--ink-black);
+        }
+
+        /* v4.4 新增：動態權重滑塊滑動條群組 */
+        .slider-group {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+        }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--ink-black);
+            margin-bottom: 4px;
+        }
+        .slider-header span.val-badge {
+            font-family: var(--mono-font);
+            color: var(--accent-blue);
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--ink-black);
+            cursor: pointer;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .checkbox-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            font-size: 11.5px;
+            cursor: pointer;
+            color: var(--text-main);
+            padding: 2px 0;
+            font-weight: 500;
+        }
+        .checkbox-label input {
+            margin-right: 6px;
+            width: 14px;
+            height: 14px;
+            accent-color: var(--ink-black);
+        }
+
+        .parq-question-row {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 7px 10px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-black);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .yes-no-group {
+            display: flex;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .badge-report {
+            display: inline-block;
+            padding: 2px 6px;
+            font-family: var(--mono-font);
+            font-size: 9.5px;
+            border-radius: 3px;
+            font-weight: 700;
+            background: #eaeef2;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .modality-subbox {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 9px 11px;
+            margin-top: 8px;
+        }
+        .modality-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--ink-black);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .wizard-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            gap: 10px;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 11px;
+            background-color: var(--section-bg);
+            color: var(--ink-black);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            text-align: center;
+        }
+        .nav-btn.primary {
+            background-color: var(--ink-black);
+            color: #ffffff;
+        }
+        .nav-btn:hover { opacity: 0.92; }
+
+        .success-msg {
+            display: none;
+            background-color: var(--gate-green-bg);
+            border: 1px solid var(--gate-green);
+            color: var(--gate-green);
+            padding: 12px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 700;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .constitutional-notice {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border-subtle);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainContainer">
+    <header>
+        <div>
+            <h1>V2 WELLNESS GROUP</h1>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Clinical Intake, PAR-Q &amp; Assessment Wizard (v4.4 Flagship Severity Sliders)</p>
+        </div>
+        <div class="sub-brand">
+            TSIM SHA TSUI FLAGSHIP PRACTICE<br>
+            <span style="color: var(--ink-black);">Full Clinical Intake &amp; Re-test Protocol</span>
+        </div>
+    </header>
+
+    <div class="mode-switcher">
+        <div class="mode-btn active" id="modeDay1" onclick="setMode('day1')">
+            MODE A｜DAY 1 初診詳細建檔 (Clinical Intake)
+            <span>PAR-Q + 嚴重度滑塊主訴 + 前瞻性飲食處方 ➔ 生成《Report 1》</span>
+        </div>
+        <div class="mode-btn" id="modeWeek8" onclick="setMode('week8')">
+            MODE B｜WEEK 8 覆測與 Δ PROOF 驗收
+            <span>對撞 16 堂日誌 ➔ 生成《Report 2》</span>
+        </div>
+    </div>
+
+    <div class="week8-banner" id="week8Banner">
+        <span>✔ 已自動載入 Day 1 動態加權 Intake 檔案及 16/16 堂 Tablet 課堂因果日誌</span>
+        <span style="font-family: var(--mono-font); font-size: 10px;">COMPLIANCE: 94.0%</span>
+    </div>
+
+    <div class="step-block" style="margin-bottom: 10px;">
+        <div class="grid-4">
+            <div>
+                <label class="sub-label">會員姓名 / 編號</label>
+                <input type="text" id="clientName" value="Client #3402">
+            </div>
+            <div>
+                <label class="sub-label">實際年齡</label>
+                <input type="number" id="chronoAge" value="34">
+            </div>
+            <div>
+                <label class="sub-label">主理 Specialist</label>
+                <input type="text" id="specialistName" value="PT John">
+            </div>
+            <div>
+                <label class="sub-label">建檔日期</label>
+                <input type="text" id="assessDate" value="24.10.2026">
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-tabs">
+        <div class="tab-btn active" id="tabBtn1" onclick="switchTab(1)">1. PAR-Q 與主訴滑塊</div>
+        <div class="tab-btn" id="tabBtn2" onclick="switchTab(2)">2. 飲食與營養基準</div>
+        <div class="tab-btn" id="tabBtn3" onclick="switchTab(3)">3. 五維儀器實測</div>
+        <div class="tab-btn" id="tabBtn4" onclick="switchTab(4)">4. 評分與因果審計</div>
+        <div class="tab-btn" id="tabBtn5" onclick="switchTab(5)">5. 處方與生成報告</div>
+    </div>
+
+    <form id="v2AssessForm">
+
+        <!-- ==========================================
+             TAB 1: PAR-Q 與主訴加權滑塊 (v4.4 升級)
+             ========================================== -->
+        <div class="wizard-step active" id="step1">
+            <div class="step-block">
+                <div class="step-title">
+                    <span>SECTION 01｜PAR-Q 法律與運動安全篩檢 (Legal &amp; Safety)</span>
+                    <span class="badge-report">MANDATORY SCREENING</span>
+                </div>
+                
+                <div class="parq-question-row">
+                    <span>1. 醫生曾否說過您的心臟有問題，並且只能進行醫生建議的運動？</span>
+                    <div class="yes-no-group">
+                        <label><input type="radio" name="parq1" value="yes"> 是</label>
+                        <label><input type="radio" name="parq1" value="no" checked> 否</label>
+                    </div>
+                </div>
+                <div class="parq-question-row">
+                    <span>2. 您在進行運動時是否經常感到胸口痛？</span>
+                    <div class="yes-no-group">
+                        <label><input type="radio" name="parq2" value="yes"> 是</label>
+                        <label><input type="radio" name="parq2" value="no" checked> 否</label>
+                    </div>
+                </div>
+                <div class="parq-question-row">
+                    <span>3. 在過去幾個月內，您是否曾在未運動時感到頭暈、或曾失去知覺？</span>
+                    <div class="yes-no-group">
+                        <label><input type="radio" name="parq3" value="yes"> 是</label>
+                        <label><input type="radio" name="parq3" value="no" checked> 否</label>
+                    </div>
+                </div>
+                <div class="parq-question-row">
+                    <span>4. 您是否有因體力活動可能惡化的骨骼或關節問題（如脊椎、膝蓋、髖關節損傷）？</span>
+                    <div class="yes-no-group">
+                        <label><input type="radio" name="parq4" value="yes"> 是</label>
+                        <label><input type="radio" name="parq4" value="no" checked> 否</label>
+                    </div>
+                </div>
+                <div class="parq-question-row">
+                    <span>5. 醫生目前是否正在處方降壓藥或心臟藥物？</span>
+                    <div class="yes-no-group">
+                        <label><input type="radio" name="parq5" value="yes"> 是</label>
+                        <label><input type="radio" name="parq5" value="no" checked> 否</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v4.4 新增：動態加權嚴重度滑塊主訴 -->
+            <div class="step-block">
+                <div class="step-title">
+                    <span>SECTION 02｜臨床主訴與個體化加權嚴重度 (Dynamic Severity Sliders)</span>
+                    <span class="badge-report">WEIGHTED COMPLAINT</span>
+                </div>
+                <div style="font-size:10px; color:var(--text-muted); margin-bottom:8px;">*透過 1-5 分嚴重度滑塊，精準量化高管客各項生理短板的急迫性，供 Report 1 自動排列優先級：</div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>1. 體態卡關 / 內臟脂肪與下腹水腫滯留</span>
+                        <span class="val-badge" id="valSlider1">4 / 5 分 (高度急迫)</span>
+                    </div>
+                    <input type="range" id="slider1" min="1" max="5" value="4" oninput="updateSliderVal(1)">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>2. 慢性疲勞 / 下午腦霧 (Brain Fog) 與專注力下降</span>
+                        <span class="val-badge" id="valSlider2">5 / 5 分 (極度急迫)</span>
+                    </div>
+                    <input type="range" id="slider2" min="1" max="5" value="5" oninput="updateSliderVal(2)">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>3. 睡眠品質差 / 易醒 / 晨起無恢復感 (WHOOP 偏低)</span>
+                        <span class="val-badge" id="valSlider3">4 / 5 分 (高度急迫)</span>
+                    </div>
+                    <input type="range" id="slider3" min="1" max="5" value="4" oninput="updateSliderVal(3)">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span>4. 抗衰老與荷爾蒙調理 (皮質醇過高 / 代謝下降)</span>
+                        <span class="val-badge" id="valSlider4">3 / 5 分 (中度關切)</span>
+                    </div>
+                    <input type="range" id="slider4" min="1" max="5" value="3" oninput="updateSliderVal(4)">
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <div></div>
+                <button type="button" class="nav-btn primary" onclick="switchTab(2)">下一步：飲食與營養基準 ➔</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 2: 飲食紀錄與前瞻性營養處方
+             ========================================== -->
+        <div class="wizard-step" id="step2">
+            <div class="step-block">
+                <div class="step-title">
+                    <span>SECTION 05｜日常飲食現狀與 Day 1 前瞻性營養處方 (Forward-Looking Diet Rx)</span>
+                    <span class="badge-report">MACRO BASELINE</span>
+                </div>
+
+                <div class="grid-2" style="margin-bottom: 8px;">
+                    <div>
+                        <label class="sub-label">MyFitnessPal / 飲食記錄來源</label>
+                        <select id="dietAppSource">
+                            <option value="mfp">MyFitnessPal (長期精準記錄)</option>
+                            <option value="photo">相片上載 / 估算記錄</option>
+                            <option value="none">無特定記錄習慣</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="sub-label">平日進食習慣與規律性</label>
+                        <select id="dietPattern">
+                            <option value="regular">三餐定時 / 伴隨外食</option>
+                            <option value="intermittent">間歇性斷食 (16:8 / OMAD)</option>
+                            <option value="irregular">工作繁忙 / 飲食極不規律</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid-3" style="margin-bottom: 8px;">
+                    <div>
+                        <label class="sub-label">目前每日平均熱量 (kcal/d)</label>
+                        <input type="number" id="currentKcal" value="1380" placeholder="例如: 1380">
+                    </div>
+                    <div>
+                        <label class="sub-label">每日蛋白質攝取估算 (g)</label>
+                        <input type="number" id="currentProtein" value="75" placeholder="例如: 75g">
+                    </div>
+                    <div>
+                        <label class="sub-label">水分與咖啡因習慣</label>
+                        <input type="text" id="waterCaffeine" value="水 < 1.5L / 咖啡因每日 2 杯">
+                    </div>
+                </div>
+
+                <!-- 現場即場鎖定的前瞻性營養處方 (v4.4 核心亮點) -->
+                <div class="modality-subbox" style="border-left: 3.5px solid var(--gate-green); background: var(--gate-green-bg);">
+                    <div class="modality-header">
+                        <span style="color:var(--gate-green);">📌 Day 1 現場前瞻性營養處方鎖定 (Forward-Looking Nutrition Prescription)：</span>
+                        <span style="font-family:var(--mono-font); font-size:9.5px; color:var(--gate-green);">INSTANT PRESCRIPTION</span>
+                    </div>
+                    <div class="grid-2">
+                        <div>
+                            <label class="sub-label">破局目標熱量與巨量營養素 (Macro Target)</label>
+                            <input type="text" id="macroTarget" value="1,750 kcal/d (P: 130g 30% | C: 175g 40% | F: 58g 30%)">
+                        </div>
+                        <div>
+                            <label class="sub-label">首 4 週前線飲食護航指令</label>
+                            <input type="text" id="dietEscortRule" value="嚴控外食高鈉排水腫、拉高蛋白質 (2g/kg) 修復代謝">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-block">
+                <div class="step-title">
+                    <span>SECTION 03 &amp; 04｜穿戴設備與外部化驗報告同步 (Telemetry)</span>
+                    <span class="badge-report">WEARABLES SYNC</span>
+                </div>
+                <div class="grid-2" style="margin-bottom: 8px;">
+                    <div>
+                        <label class="sub-label">Apple Watch 日常運動平均心率 (bpm)</label>
+                        <input type="number" id="watchHr" value="152">
+                    </div>
+                    <div>
+                        <label class="sub-label">WHOOP 7日平均恢復率 (%)</label>
+                        <input type="number" id="whoopRec" value="42">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <label class="sub-label">WHOOP 深層睡眠 SWS (min)</label>
+                        <input type="number" id="whoopSws" value="48">
+                    </div>
+                    <div>
+                        <label class="sub-label">外部化驗 / 皮質醇狀態</label>
+                        <select id="cortisolStatus">
+                            <option value="high">▲ 皮質醇處於高位 (伴隨水腫)</option>
+                            <option value="normal">✔ 皮質醇回落正常區間</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button type="button" class="nav-btn" onclick="switchTab(1)">⬅ 上一步</button>
+                <button type="button" class="nav-btn primary" onclick="switchTab(3)">下一步：五維儀器實測 ➔</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 3: 五維醫療級儀器實測 (含 Motiphysio)
+             ========================================== -->
+        <div class="wizard-step" id="step3">
+            <div class="step-block">
+                <div class="step-title">
+                    <span>STEP 3｜五維醫療級旗艦儀器實測 (5-Modality Spectrum)</span>
+                    <span class="badge-report">COMPLETE BIOMARKER SPECTRUM</span>
+                </div>
+
+                <div class="modality-subbox" style="margin-top: 0;">
+                    <div class="modality-header">
+                        <span>A. COSMED 靜息代謝 (RMR) 與燃脂交叉測試 (FatMax)</span>
+                        <span style="color:var(--text-muted); font-size:10px;">METABOLIC &amp; CARDIO</span>
+                    </div>
+                    <div class="grid-3">
+                        <div>
+                            <label class="sub-label">實測 RMR (kcal/d) <span class="day1-ref">Day1: 1581</span></label>
+                            <input type="number" id="cosmedRmr" value="1581">
+                        </div>
+                        <div>
+                            <label class="sub-label">FatMax 最高燃脂靶心 (bpm) <span class="day1-ref">Day1: 121 bpm</span></label>
+                            <input type="number" id="fatmaxHr" value="121">
+                        </div>
+                        <div>
+                            <label class="sub-label">峰值脂肪氧化率 (%) <span class="day1-ref">Day1: 50%</span></label>
+                            <input type="number" id="fatOxPct" value="50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modality-subbox">
+                    <div class="modality-header">
+                        <span>B. InBody 970 細胞水腫比與骨骼肌組成</span>
+                        <span style="color:var(--text-muted); font-size:10px;">STRUCTURAL &amp; VASCULAR</span>
+                    </div>
+                    <div class="grid-3">
+                        <div>
+                            <label class="sub-label">ECW 細胞外水腫比 (Ratio) <span class="day1-ref">Day1: 0.392 ▲</span></label>
+                            <input type="text" id="inbodyEcw" value="0.392">
+                        </div>
+                        <div>
+                            <label class="sub-label">骨骼肌重 SMM <span class="day1-ref">Day1: 28.4 kg</span></label>
+                            <input type="text" id="inbodySmm" value="28.4 kg (基準)">
+                        </div>
+                        <div>
+                            <label class="sub-label">體脂率 <span class="day1-ref">Day1: 24.8%</span></label>
+                            <input type="text" id="inbodyFat" value="24.8% (基準)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modality-subbox">
+                    <div class="modality-header">
+                        <span>C. 自主神經 HRV 與 Pasesa 血管彈性測試</span>
+                        <span style="color:var(--text-muted); font-size:10px;">NEURO &amp; AUTONOMIC</span>
+                    </div>
+                    <div class="grid-3">
+                        <div>
+                            <label class="sub-label">靜息自主神經 HRV (ms) <span class="day1-ref">Day1: 42 ms</span></label>
+                            <input type="number" id="hrvMs" value="42">
+                        </div>
+                        <div>
+                            <label class="sub-label">Pasesa 血管彈性 (AVI / API) <span class="day1-ref">Day1: 18 / 22</span></label>
+                            <input type="text" id="pasesaVal" value="AVI 18 / API 22">
+                        </div>
+                        <div>
+                            <label class="sub-label">靜息血壓 BP (mmHg) <span class="day1-ref">Day1: 126/82</span></label>
+                            <input type="text" id="bpVal" value="126/82">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v4.4 保留：Motiphysio 3D 結構實測模組 -->
+                <div class="modality-subbox">
+                    <div class="modality-header">
+                        <span>D. Motiphysio 3D 姿勢與骨骼對位掃描</span>
+                        <span style="color:var(--text-muted); font-size:10px;">POSTURE &amp; ALIGNMENT</span>
+                    </div>
+                    <div class="grid-3">
+                        <div>
+                            <label class="sub-label">骨盆傾斜度 <span class="day1-ref">Day1: 後傾 6.2°</span></label>
+                            <input type="text" id="motiphysioPelvis" value="後傾 6.2° (需激活髖屈肌)">
+                        </div>
+                        <div>
+                            <label class="sub-label">脊椎側彎與旋轉 <span class="day1-ref">Day1: 4.5° 側彎</span></label>
+                            <input type="text" id="motiphysioSpine" value="胸腰段 4.5° 側彎代償">
+                        </div>
+                        <div>
+                            <label class="sub-label">HKA 下肢力線對位 <span class="day1-ref">Day1: 輕度內旋</span></label>
+                            <input type="text" id="motiphysioHka" value="雙側膝內旋 (HKA 偏離中立)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button type="button" class="nav-btn" onclick="switchTab(2)">⬅ 上一步</button>
+                <button type="button" class="nav-btn primary" onclick="switchTab(4)">下一步：五維雷達與因果審計 ➔</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 4: 五維雷達常模落點與 16 堂過程審計
+             ========================================== -->
+        <div class="wizard-step" id="step4">
+            <div class="step-block">
+                <div class="step-title">
+                    <span>STEP 4A｜五維生理雷達常模落點與生物年齡演算</span>
+                    <span class="badge-report">5D RADAR &amp; BIO-AGE</span>
+                </div>
+                <div class="grid-4" style="margin-bottom: 10px;">
+                    <div>
+                        <label class="sub-label">Metabolic (%)</label>
+                        <input type="number" id="scoreMeta" value="85">
+                    </div>
+                    <div>
+                        <label class="sub-label">Structural (%)</label>
+                        <input type="number" id="scoreStruct" value="78">
+                    </div>
+                    <div>
+                        <label class="sub-label">Cardio (%)</label>
+                        <input type="number" id="scoreCardio" value="72">
+                    </div>
+                    <div>
+                        <label class="sub-label">Neurological (%)</label>
+                        <input type="number" id="scoreNeuro" value="42">
+                    </div>
+                </div>
+                <div class="grid-3">
+                    <div>
+                        <label class="sub-label">V2 生物年齡 <span class="day1-ref">Day1: 38 歲</span></label>
+                        <input type="number" id="bioAge" value="38">
+                    </div>
+                    <div>
+                        <label class="sub-label">V2 代謝綜合評分 <span class="day1-ref">Day1: 62 (C+)</span></label>
+                        <input type="text" id="totalScore" value="62 / 100 (Grade C+)">
+                    </div>
+                    <div>
+                        <label class="sub-label">首要木桶短板判定</label>
+                        <input type="text" id="limitingFactor" value="交感神經過載與微循環水腫滯留">
+                    </div>
+                </div>
+
+                <div class="audit-auto-box" style="display:block; margin-top:10px;">
+                    <div class="modality-header" style="margin-bottom: 4px;">
+                        <span>📌 系統自動匯總：過去 8 週 16 堂 Tablet Session Wizard 審計結果</span>
+                        <span style="font-family:var(--mono-font); color:var(--gate-green);">AUTO-IMPORTED</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-main); margin-bottom: 4px;">
+                        • <b>閘口分佈</b>：13× GREEN 常規推進 ｜ <b style="color:var(--gate-yellow);">3× YELLOW 降級保護 (S04, S09, S13)</b> ｜ 0× RED
+                    </div>
+                    <div class="mini-sess-strip" style="display:grid; grid-template-columns:repeat(16, 1fr); gap:3px; margin:6px 0;">
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">01</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">02</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">03</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#c47d00; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">04</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">05</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">06</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">07</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">08</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#c47d00; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">09</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">10</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">11</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">12</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#c47d00; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">13</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">14</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">15</div>
+                        <div class="mini-cell" style="height:18px; font-size:8px; background:#141413; color:#fff; display:flex; align-items:center; justify-content:center; border-radius:2px;">16</div>
+                    </div>
+                    <div class="grid-2" style="margin-top: 6px;">
+                        <div>
+                            <label class="sub-label">代表性抗阻 Peak &amp; Total Watt 推進</label>
+                            <input type="text" value="Peak 380W ➔ 540W (+42%) | Total 21.4kJ">
+                        </div>
+                        <div>
+                            <label class="sub-label">已核銷被動修復點數 (Credits Ledger)</label>
+                            <input type="text" value="28 Credits (8× STENDO + 6× 1.5ATA HBOT)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button type="button" class="nav-btn" onclick="switchTab(3)">⬅ 上一步</button>
+                <button type="button" class="nav-btn primary" onclick="switchTab(5)">下一步：處方與生成報告 ➔</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 5: 處方分流與一鍵生成報告
+             ========================================== -->
+        <div class="wizard-step" id="step5">
+            <div class="step-block">
+                <div
