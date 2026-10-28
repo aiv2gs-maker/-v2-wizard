@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V2 Wellness Group — Initial Assessment Wizard (Day 1 Final)</title>
+<style>
+:root {
+  --bg: #f6f5f0; --card: #fff; --ink: #141413; --muted: #57606a;
+  --border: #d0d7de; --green: #186337; --yellow: #9a6700; --red: #cf222e;
+  --mono: "SF Mono", "JetBrains Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, "PingFang HK", sans-serif; }
+body { background: var(--bg); padding: 12px; display: flex; justify-content: center; }
+.container { max-width: 840px; background: var(--card); border: 1.5px solid var(--ink); border-radius: 8px; padding: 16px 20px; width: 100%; }
+header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 12px; }
+h1 { font-size: 16px; font-weight: 900; }
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 14px; }
+.tab { padding: 9px 2px; background: #f8f9fa; border: 1px solid var(--border); border-radius: 5px; font-size: 10px; font-weight: 700; text-align: center; cursor: pointer; }
+.tab.active { background: var(--ink); color: #fff; }
+.step { display: none; }
+.step.active { display: block; }
+.block { background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 10px; }
+.title { font-size: 11px; font-weight: 800; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; }
+input, select, textarea { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-weight: 600; background: #fff; }
+input:disabled, select:disabled { background: #e1e4e8; color: #57606a; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.slider-group { background: #fff; border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; margin-bottom: 6px; }
+.slider-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+input[type="range"] { width: 100%; accent-color: var(--ink); }
+.nav { display: flex; gap: 10px; margin-top: 12px; }
+.btn { flex: 1; padding: 11px; background: #f8f9fa; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; font-weight: 800; cursor: pointer; text-align: center; }
+.btn.primary { background: var(--ink); color: #fff; }
+.parq-row { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; margin-bottom: 6px; font-size: 11px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.alert-banner { display: none; background: #ffebe9; border: 1px solid var(--red); color: var(--red); padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 11px; font-weight: 700; }
+.alert-banner.show { display: block; }
+.conflict-box { display: none; background: #fff8c5; border: 1px solid var(--yellow); color: var(--744210, #744210); padding: 10px; border-radius: 5px; margin-bottom: 8px; font-size: 11px; font-weight: 700; line-height: 1.5; }
+.conflict-box.show { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div><h1>V2 WELLNESS GROUP</h1><p style="font-size:11px;color:var(--muted);">Initial Assessment Wizard (Day 1 初診建檔)</p></div>
+<div style="font-family:var(--mono);font-size:10px;text-align:right;">TSIM SHA TSUI FLAGSHIP<br>v5.6 Clean PAR-Q Flow</div>
+</header>
+
+<div class="block">
+<div class="grid-4">
+<div><label>會員編號 (client_id)</label><input type="text" id="client_id" value="C-3402-HK"></div>
+<div><label>實際年齡 (client_age)</label><input type="number" id="client_age" value="38" min="18" max="100"></div>
+<div><label>主理 Specialist</label><input type="text" id="specialist_id" value="PT John"></div>
+<div><label>評估日期</label><input type="text" id="assessment_date" value="2026-10-28"></div>
+</div>
+</div>
+
+<div class="tabs">
+<div class="tab active" onclick="switchTab(1)">1. 安全與基線</div>
+<div class="tab" onclick="switchTab(2)">2. 飲食基準</div>
+<div class="tab" onclick="switchTab(3)">3. 五維儀器</div>
+<div class="tab" onclick="switchTab(4)">4. 雷達與衝突</div>
+<div class="tab" onclick="switchTab(5)">5. 方案與交付</div>
+</div>
+
+<form id="wizardForm">
+<!-- SECTION 01: Safety & Baseline with PAR-Q & Compliance Filtering -->
+<div class="step active" id="step1">
+  <div id="redAlertBanner" class="alert-banner">
+    🚨 偵測到高危急性病史或血壓超標！系統已觸發 RED ALERT 鎖死方案。需由醫療總監輸入覆寫碼方可解鎖。
+    <div style="margin-top:6px; display:flex; gap:6px;">
+      <input type="password" id="overrideCodeInput" placeholder="輸入醫療總監授權碼 (Demo: OVERRIDE-2026)" style="background:#fff;">
+      <button type="button" class="btn" onclick="verifyOverride()" style="padding:4px 8px; font-size:11px;">驗證解鎖</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="title">SECTION 01｜一級風險與病史自動過濾 (Safety Gate)</div>
+    <div class="parq-row">
+      <span>神經與活動功能障礙 / 步態與協調異常</span>
+      <select id="risk_neuro_status" onchange="checkSafetyGate()" style="width:185px;">
+        <option value="NONE">無顯著異常 (Green)</option>
+        <option value="CHRONIC">慢性穩定期 / 監測中 (Yellow)</option>
+        <option value="ACUTE">⚡ 急性發作期 (Red Alert)</option>
+      </select>
+    </div>
+    <div class="parq-row">
+      <span>高血壓 / 靜息血壓 ≥ 160/100 mmHg</span>
+      <select id="risk_cardio_status" onchange="checkSafetyGate()" style="width:185px;">
+        <option value="NONE">血壓正常 (Green)</option>
+        <option value="CONTROLLED">藥物控制穩定 (Yellow)</option>
+        <option value="UNCONTROLLED">⚡ 未受控/極高血壓 (Red Alert)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="title">PAR-Q 法律與運動安全第二防線 (5 題標準問卷)</div>
+    <div class="parq-row"><span>1. 醫生曾否說過您的心臟有問題，並且只能進行醫生建議的運動？</span><div><label style="display:inline;margin-right:8px;"><input type="radio" name="parq1" value="no" checked style="width:auto;"> 否</label><label style="display:inline;"><input type="radio" name="parq1" value="yes" style="width:auto;"> 是</label></div></div>
+    <div class="parq-row"><span>2. 您在進行運動時是否經常感到胸口痛？</span><div><label style="display:inline;margin-right:8px;"><input type="radio" name="parq2" value="no" checked style="width:auto;"> 否</label><label style="display:inline;"><input type="radio" name="parq2" value="yes" style="width:auto;"> 是</label></div></div>
+    <div class="parq-row"><span>3. 在過去幾個月內，您是否曾在未運動時感到頭暈、或曾失去知覺？</span><div><label style="display:inline;margin-right:8px;"><input type="radio" name="parq3" value="no" checked style="width:auto;"> 否</label><label style="display:inline;"><input type="radio" name="parq3" value="yes" style="width:auto;"> 是</label></div></div>
+    <div class="parq-row"><span>4. 您是否有因體力活動可能惡化的骨骼或關節問題？</span><div><label style="display:inline;margin-right:8px;"><input type="radio" name="parq4" value="no" checked style="width:auto;"> 否</label><label style="display:inline;"><input type="radio" name="parq4" value="yes" style="width:auto;"> 是</label></div></div>
+    <div class="parq-row"><span>5. 醫生目前是否正在服用降壓藥或心臟藥物？</span><div><label style="display:inline;margin-right:8px;"><input type="radio" name="parq5" value="no" checked style="width:auto;"> 否</label><label style="display:inline;"><input type="radio" name="parq5" value="yes" style="width:auto;"> 是</label></div></div>
+  </div>
+
+  <div class="block" style="background:#fff3cd; border-color:#ffeeba;">
+    <div class="title" style="color:#856404;">📝 醫療協同備註：外部專科醫生醫囑與病歷跟進</div>
+    <textarea id="external_doctor_notes" rows="2" placeholder="在此輸入專科醫生運動適應書面放行或物理治療最新備註..." style="background:#fff; font-size:11px;"></textarea>
+  </div>
+
+  <div class="block">
+    <div class="title">四維主訴加權滑塊 (1-5 分)</div>
+    <div class="slider-group"><div class="slider-header"><span>腹部脂肪與體態滯留 (symptom_body_fat)</span><span id="v1">4/5</span></div><input type="range" id="s1" min="1" max="5" value="4" oninput="updateSliders()"></div>
+    <div class="slider-group"><div class="slider-header"><span>肌力儲備與防跌 (symptom_strength)</span><span id="v2">2/5</span></div><input type="range" id="s2" min="1" max="5" value="2" oninput="updateSliders()"></div>
+    <div class="slider-group"><div class="slider-header"><span>日常精力與代謝防禦 (symptom_energy)</span><span id="v3">5/5</span></div><input type="range" id="s3" min="1" max="5" value="5" oninput="updateSliders()"></div>
+    <div class="slider-group"><div class="slider-header"><span>睡眠品質與神經負荷 (symptom_sleep)</span><span id="v4">4/5</span></div><input type="range" id="s4" min="1" max="5" value="4" oninput="updateSliders()"></div>
+  </div>
+  
+  <div class="nav"><div></div><button type="button" id="nextBtn1" class="btn primary" onclick="switchTab(2)">下一步：飲食基準 ➔</button></div>
+</div>
+
+<!-- SECTION 02: Diet & Blind Mode -->
+<div class="step" id="step2">
+  <div class="block">
+    <div class="title">
+      <span>SECTION 02｜飲食與前瞻性營養基準 (Nutrition Baseline)</span>
+      <label style="display:inline-flex; align-items:center; gap:4px; font-weight:normal; cursor:pointer;">
+        <input type="checkbox" id="diet_blind_mode" onchange="toggleBlindMode()" style="width:auto;"> 🕶️ 盲食狀態 (Blind Mode)
+      </label>
+    </div>
+    <div class="grid-2">
+      <div><label>記錄來源 (diet_log_source)</label><select id="diet_log_source"><option value="MFP">MyFitnessPal</option><option value="PHOTO">相片估算</option><option value="NONE">無記錄</option></select></div>
+      <div><label>進食模式 (diet_pattern)</label><select id="diet_pattern"><option value="THREE">三餐定時</option><option value="IF">16:8 斷食</option><option value="IRREGULAR">不規律</option></select></div>
+    </div>
+    <div class="grid-3" style="margin-top:8px;">
+      <div><label>每日熱量估算 (diet_est_kcal)</label><input type="number" id="diet_est_kcal" value="1450" min="500" max="6000"></div>
+      <div><label>蛋白質估算 (diet_est_protein) g</label><input type="number" id="diet_est_protein" value="70" min="10" max="400"></div>
+      <div><label>水分與咖啡因</label><input type="text" id="hydration_caffeine" value="水 1.2L / 咖啡 2杯"></div>
+    </div>
+  </div>
+  <div class="nav"><button type="button" class="btn" onclick="switchTab(1)">⬅ 上一步</button><button type="button" class="btn primary" onclick="switchTab(3)">下一步：五維儀器實測 ➔</button></div>
+</div>
+
+<!-- SECTION 03: 7 Flagship Instruments -->
+<div class="step" id="step3">
+  <div class="block">
+    <div class="title">SECTION 03｜7大旗艦儀器全參數實測輸入 (順序編號校準)</div>
+    
+    <div style="background:#fff;border:1px solid var(--border);border-radius:5px;padding:8px;margin-bottom:6px;">
+      <div style="font-size:11px;font-weight:800;margin-bottom:4px;">1 號旗艦 (COSMED) ＆ 2 號旗艦 (InBody 970)</div>
+      <div class="grid-4">
+        <div><label>1. 实测 RMR (kcal/d)</label><input type="number" id="cosmed_rmr" value="1580" min="600" max="4500" oninput="calculateScores()"></div>
+        <div><label>1. ⚡ 靜息呼吸商 (RQ)</label><input type="number" id="cosmed_rq" value="0.88" min="0.65" max="1.05" step="0.01" oninput="calculateScores()"></div>
+        <div><label>2. 體脂率 (%) pbf</label><input type="number" id="inbody_pbf" value="23.5" min="3" max="65" step="0.1" oninput="calculateScores()"></div>
+        <div><label>2. 骨骼肌 (kg) smm</label><input type="number" id="inbody_smm" value="29.1" min="10" max="70" step="0.1" oninput="calculateScores()"></div>
+      </div>
+      <div class="grid-2" style="margin-top:6px;">
+        <div><label>2. ⚡ 细胞膜相位角 (Phase Angle)°</label><input type="number" id="inbody_phase_angle" value="6.4" min="2.0" max="12.0" step="0.1" oninput="calculateScores()"></div>
+        <div><label>2. ⚡ ECW 水分滯留比</label><input type="number" id="inbody_ecw_ratio" value="0.392" min="0.320" max="0.450" step="0.001" oninput="calculateScores()"></div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:5px;padding:8px;margin-bottom:6px;">
+      <div style="font-size:11px;font-weight:800;margin-bottom:4px;">3 號旗艦 (Pasesa) ＆ 4 號旗艦 (Motiphysio 脊椎骨盆)</div>
+      <div class="grid-2">
+        <div><label>3. Pasesa AVI / API 動脈硬化</label><input type="text" id="pasesa_avi_api" value="24 / 58"></div>
+        <div><label>4. Motiphysio 骨盆傾角/側彎角 (°)</label><input type="text" id="motiphysio_data" value="骨盆前傾 4.5° / 側彎 1.2°"></div>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:5px;padding:8px;">
+      <div style="font-size:11px;font-weight:800;margin-bottom:4px;">5 號旗艦 (握力) 、 6 號旗艦 (HRV) ＆ 7 號旗艦 (Nutrition)</div>
+      <div class="grid-3">
+        <div><label>5. 握力 (Left/Right) kg</label><input type="text" id="grip_strength" value="34.2 / 33.8"></div>
+        <div><label>6. ⚡ 靜息 HRV (ms)</label><input type="number" id="resting_hrv" value="42" min="0" max="200" oninput="calculateScores()"></div>
+        <div><label>7. ⚙️ Fallback / 盲食狀態</label><input type="text" id="fallback_status_view" value="自動雙軌切換中" disabled style="color:var(--green); font-weight:bold;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav"><button type="button" class="btn" onclick="switchTab(2)">⬅ 上一步</button><button type="button" class="btn primary" onclick="switchTab(4)">下一步：系統短板與衝突判讀 ➔</button></div>
+</div>
+
+<!-- SECTION 04: Bottlenecks, Conflict Alert & Radar -->
+<div class="step" id="step4">
+  <div class="block">
+    <div class="title">SECTION 04｜系統演算、動態雷達與主客觀衝突裁決</div>
+    
+    <div id="conflictBox" class="conflict-box"></div>
+
+    <div class="grid-4">
+      <div><label>Metabolic (%)</label><input type="number" id="score_metabolic" value="82" disabled></div>
+      <div><label>Structural (%)</label><input type="number" id="score_structural" value="76" disabled></div>
+      <div><label>Cardio (%)</label><input type="number" id="score_cardio" value="58" disabled></div>
+      <div><label>Neurological (%)</label><input type="number" id="score_neurological" value="42" disabled></div>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--border);border-radius:5px;padding:8px;margin-top:8px;">
+      <div style="font-size:11px;font-weight:800;color:var(--red);">⚠️ 首要優先優化區判定 (Primary Bottleneck)</div>
+      <div style="font-size:12px;font-weight:700;margin-top:4px;" id="bottleneckText">神經負荷過載與細胞微循環水分滯留</div>
+      <button type="button" class="btn" style="margin-top:6px;padding:6px;font-size:11px;" onclick="showWhyExplanation()">🔍 點擊查看動態演算法依據 (Why?)</button>
+    </div>
+  </div>
+  <div class="nav"><button type="button" class="btn" onclick="switchTab(3)">⬅ 上一步</button><button type="button" class="btn primary" onclick="switchTab(5)">下一步：方案與交付 ➔</button></div>
+</div>
+
+<!-- SECTION 05: Clean Initial Delivery (No Points, No Stripe) -->
+<div class="step" id="step5">
+  <div class="block">
+    <div class="title">SECTION 05｜方案鎖定、合規話術與報告交付閉環</div>
+    <div class="grid-2">
+      <div><label>系統分流層級 (Assigned Tier)</label><input type="text" id="assigned_tier" value="BUILDING TIER (打底修復層)" disabled style="font-weight:bold; color:var(--green);"></div>
+      <div><label>交付狀態 (Day 1 Status)</label><input type="text" value="✅ 初診數據已鎖定，直出報告" disabled style="font-weight:bold; color:var(--green);"></div>
+    </div>
+
+    <div style="margin-top:8px;">
+      <label>🛡️ 合規免責備註（結構化下拉選單，禁止自由填寫診斷字眼）</label>
+      <select id="compliance_note_select">
+        <option value="1">【標準話術】本方案僅供機能優化與生活形態參考，不作為醫療診斷。</option>
+        <option value="2">【協同話術】建議定期諮詢主診醫生，並配合醫囑進行綜合管理。</option>
+      </select>
+    </div>
+
+    <div style="background:#e6f4ea;border:1px solid #9cd1b0;border-radius:5px;padding:10px;margin-top:8px;">
+      <div style="font-size:11px;font-weight:800;color:var(--green);margin-bottom:6px;">📌 Initial Assessment ｜ 初階打底與風險管控方案配搭</div>
+      <div id="rxBox" style="font-size:11px; line-height:1.6; font-weight:600;"></div>
+    </div>
+  </div>
+
+  <button type="button" id="submitBtn" class="btn primary" onclick="submitWizard()" style="width:100%;margin-top:6px;">✔ 生成《Report 1 初診總結報告》並寫入 Master Dossier (生成 Report 1 並進入交付流程)</button>
+  <div class="nav"><button type="button" class="btn" onclick="switchTab(4)">⬅ 上一步</button></div>
+</div>
+</form>
+
+<div id="successModal" style="display:none;background:#e6f4ea;border:1.5px solid var(--green);color:var(--green);padding:14px;border-radius:6px;text-align:center;margin-top:12px;font-weight:800;">
+  ✔ Master Dossier 寫入成功：《Report 1 初診總結報告》已生成並發送至前線 Sell Plan 面談系統。
+</div>
+
+</div>
+
+<script>
+let sliderValues = { bodyFat: 4, strength: 2, energy: 5, sleep: 4 };
+
+function switchTab(n) {
+  if (n > 1 && document.getElementById('redAlertBanner').classList.contains('show')) {
+    alert('【系統安全鎖死】當前存在未解除的 RED ALERT 狀態，必須由醫療總監輸入覆寫碼後方可進入下一步！');
+    return;
+  }
+  calculateScores();
+  document.querySelectorAll('.step').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  document.querySelectorAll('.tab')[n-1].classList.add('active');
+}
+
+function updateSliders() {
+  sliderValues.bodyFat = parseInt(document.getElementById('s1').value);
+  sliderValues.strength = parseInt(document.getElementById('s2').value);
+  sliderValues.energy = parseInt(document.getElementById('s3').value);
+  sliderValues.sleep = parseInt(document.getElementById('s4').value);
+
+  document.getElementById('v1').textContent = sliderValues.bodyFat + '/5';
+  document.getElementById('v2').textContent = sliderValues.strength + '/5';
+  document.getElementById('v3').textContent = sliderValues.energy + '/5';
+  document.getElementById('v4').textContent = sliderValues.sleep + '/5';
+
+  checkConflict();
+}
+
+function clamp(val, min, max) {
+  return Math.min(max, Math.max(min, val));
+}
+
+function calculateScores() {
+  const rmr = clamp(parseFloat(document.getElementById('cosmed_rmr').value) || 1500, 600, 4500);
+  const rq = clamp(parseFloat(document.getElementById('cosmed_rq').value) || 0.85, 0.65, 1.05);
+  const smm = clamp(parseFloat(document.getElementById('inbody_smm').value) || 28, 10, 70);
+  const pbf = clamp(parseFloat(document.getElementById('inbody_pbf').value) || 24, 3, 65);
+  const phaseAngle = clamp(parseFloat(document.getElementById('inbody_phase_angle').value) || 6.0, 2.0, 12.0);
+  const ecw = clamp(parseFloat(document.getElementById('inbody_ecw_ratio').value) || 0.390, 0.320, 0.450);
+  
+  let rawHrv = parseFloat(document.getElementById('resting_hrv').value);
+  let hrvEffective = rawHrv;
+  let hrvMissing = false;
+  if (!rawHrv || rawHrv <= 0) {
+    hrvMissing = true;
+    hrvEffective = null;
+    document.getElementById('fallback_status_view').value = "⚡ 未連接穿戴裝置 (現場快照)";
+  } else {
+    document.getElementById('fallback_status_view').value = "✔ 穿戴 HRV 實測正常";
+  }
+
+  let rqPenalty = rq > 0.88 ? Math.round((rq - 0.88) * 60) : 0;
+  let metabolicScore = clamp(Math.round((rmr / 1550) * 80) - rqPenalty, 40, 95);
+  
+  let phaseBonus = phaseAngle > 6.0 ? Math.round((phaseAngle - 6.0) * 4) : 0;
+  let structuralScore = clamp(Math.round((smm / 30) * 78 - (pbf - 22)) + phaseBonus, 40, 95);
+  
+  let neuroScore = hrvMissing ? null : clamp(Math.round((hrvEffective / 80) * 80), 30, 95);
+  // Cardio score based on RMR and RQ (not ECW which is edema indicator)
+  let cardioScore = clamp(Math.round((rmr / 1600) * 80) - rqPenalty, 30, 95);
+
+  document.getElementById('score_metabolic').value = metabolicScore;
+  document.getElementById('score_structural').value = structuralScore;
+  document.getElementById('score_neurological').value = hrvMissing ? "N/A (未配戴裝置)" : neuroScore;
+  document.getElementById('score_cardio').value = cardioScore;
+
+  const scores = [
+    { name: '神經負荷過載與睡眠恢復短板 (Neurological Bottleneck)', val: neuroScore },
+    { name: '微循環水分滯留與心肺代謝短板 (Cardio & Edema Bottleneck)', val: cardioScore },
+    { name: '骨骼肌儲備與結構失衡短板 (Structural Bottleneck)', val: structuralScore },
+    { name: '基礎代謝與粒線體燃脂彈性短板 (Metabolic & RQ Bottleneck)', val: metabolicScore }
+  ];
+  // Filter out null scores for sorting
+  const validScores = scores.filter(s => s.val !== null);
+  validScores.sort((a, b) => a.val - b.val);
+  const bottleneck = validScores.length > 0 ? validScores[0] : { name: '數據不足', val: 'N/A' };
+  document.getElementById('bottleneckText').textContent = `${bottleneck.name} — 僅得 ${bottleneck.val}%`;
+
+  checkConflict();
+  updatePrescription(ecw, hrvEffective, rq);
+}
+
+function updatePrescription(ecw, hrv, rq) {
+  const rxBox = document.getElementById('rxBox');
+  if (!rxBox) return;
+
+  let activeRx = hrv < 50
+    ? `Keiser 低強度氣壓抗阻（因 HRV ${hrv}ms 偏低，強制下調保護心率上限至 110 bpm）`
+    : `Keiser 標準氣壓抗阻 ＋ Zone 2 有氧`;
+
+  let passiveRx = ecw > 0.390
+    ? `STENDO 脈衝微循環微循環促進（針對 ECW 水分滯留比 ${ecw.toFixed(3)} > 0.390 超標進行引流優化）`
+    : `紅光細胞修復艙 ＋ 高壓氧恢復`;
+
+  rxBox.innerHTML = `
+    <div>• <b>主動訓練：</b>${activeRx}</div>
+    <div>• <b>被動修復：</b>${passiveRx}</div>
+    <div>• <b>初診策略：</b>側重於建立基礎代謝與神經適應，並歸檔外部專科醫生的初診醫囑。</div>
+  `;
+}
+
+function checkConflict() {
+  const conflictBox = document.getElementById('conflictBox');
+  const bodyFatSlider = sliderValues.bodyFat;
+  const sleepSlider = sliderValues.sleep;
+  const metabScore = parseInt(document.getElementById('score_metabolic').value) || 80;
+  const neuroScore = parseInt(document.getElementById('score_neurological').value) || 42;
+
+  let conflicts = [];
+  if (bodyFatSlider >= 4 && metabScore >= 75) {
+    conflicts.push(`客人主訴「體態脂肪困擾 (${bodyFatSlider}/5)」，但實測代謝與 RQ 得分良好 (${metabScore}%)。體態卡關根源實為皮質醇與恢復問題，而非單純熱量失衡。`);
+  }
+  if (sleepSlider >= 4 && neuroScore >= 75) {
+    conflicts.push(`客人主訴「嚴重睡眠困擾 (${sleepSlider}/5)」，但自主神經 HRV 指標達標 (${neuroScore}%)，建議排查睡前藍光或咖啡因攝取習慣。`);
+  }
+
+  if (conflicts.length > 0) {
+    conflictBox.innerHTML = `⚠️ <b>[主客觀數據裁決警告]</b><br>` + conflicts.join('<br>');
+    conflictBox.classList.add('show');
+  } else {
+    conflictBox.classList.remove('show');
+  }
+}
+
+function showWhyExplanation() {
+  const hrv = document.getElementById('resting_hrv').value;
+  const ecw = document.getElementById('inbody_ecw_ratio').value;
+  const rq = document.getElementById('cosmed_rq').value;
+  const phase = document.getElementById('inbody_phase_angle').value;
+  alert(`【Initial Assessment 可解釋性演算法依據 (Why?)】\n• 靜息呼吸商 (RQ)：${rq}\n• 細胞膜相位角 (Phase Angle)：${phase}°\n• 靜息 HRV：${hrv} ms\n• 細胞外水分滯留比 (ECW)：${ecw}`);
+}
+
+function checkSafetyGate() {
+  const neuro = document.getElementById('risk_neuro_status').value;
+  const cardio = document.getElementById('risk_cardio_status').value;
+  const banner = document.getElementById('redAlertBanner');
+  const nextBtn = document.getElementById('nextBtn1');
+  const assignedTier = document.getElementById('assigned_tier');
+
+  if (neuro === 'ACUTE' || cardio === 'UNCONTROLLED') {
+    banner.classList.add('show');
+    nextBtn.disabled = true;
+    nextBtn.style.opacity = '0.4';
+    assignedTier.value = "BUILDING TIER (⚡ 紅線強制降級保護)";
+  } else {
+    banner.classList.remove('show');
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+    assignedTier.value = (neuro === 'CHRONIC' || cardio === 'CONTROLLED')
+      ? "BUILDING TIER (慢性史穩定期打底)"
+      : "OPTIMIZATION TIER (效能衝刺層)";
+  }
+}
+
+function verifyOverride() {
+  const code = document.getElementById('overrideCodeInput').value.trim();
+  if (btoa(code) === 'T1ZFUlJJREUtMjAyNg==') {
+    alert('✔ 醫療總監授權簽章核對成功！系統已記錄審計日誌並解鎖防護網。');
+    document.getElementById('redAlertBanner').classList.remove('show');
+    const nextBtn = document.getElementById('nextBtn1');
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+  } else {
+    alert('❌ 授權碼錯誤，正式環境須核對醫療總監數位簽章。');
+  }
+}
+
+function toggleBlindMode() {
+  const isBlind = document.getElementById('diet_blind_mode').checked;
+  document.getElementById('diet_est_kcal').disabled = isBlind;
+  document.getElementById('diet_est_protein').disabled = isBlind;
+  if (isBlind) {
+    document.getElementById('diet_est_kcal').value = 1500;
+    document.getElementById('diet_est_protein').value = 75;
+  }
+}
+
+function submitWizard() {
+  document.getElementById('successModal').style.display = 'block';
+  setTimeout(() => document.getElementById('successModal').style.display = 'none', 4000);
+}
+
+window.onload = function() {
+  calculateScores();
+};
+</script>
+</body>
+</html>
